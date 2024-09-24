@@ -17,12 +17,12 @@
 </script>
 
 {#if showNavbar}
-  {#if $page.url.pathname === '/home guru' || $page.url.pathname === '/dashboard guru'}
+  {#if $page.url.pathname === '/home%20guru' || $page.url.pathname === '/dashboard%20guru'}
     <!-- Navbar khusus untuk guru di halaman home-guru dan dashboard-guru -->
     <Navbarguru />
   {:else}
     <!-- Navbar umum untuk halaman lain -->
-    <Navbarguru />
+    <Navbar />
   {/if}
 {/if}
 <!-- Menampilkan navbar sesuai dengan kondisi URL -->
