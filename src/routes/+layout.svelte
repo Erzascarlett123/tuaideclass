@@ -3,20 +3,29 @@
   import Navbar from '../component/navbar.svelte'; // Navbar umum (untuk murid)
   import Navbarguru from '../component/navbarguru.svelte'; // Navbar khusus untuk guru
   import "../app.css"; // Pastikan path ini sesuai
-  export let showNavbar = true; // Default untuk menampilkan navbar
+  
+  // Default untuk menampilkan navbar
+  export let showNavbar = true;
+
+  // Menentukan kapan menampilkan navbar atau tidak
+  $: if ($page.url.pathname === '/login' || $page.url.pathname === '/signup') {
+    // Tidak menampilkan navbar di halaman login dan signup
+    showNavbar = false;
+  } else {
+    showNavbar = true;
+  }
 </script>
 
-<!-- Menampilkan navbar sesuai dengan kondisi URL -->
 {#if showNavbar}
   {#if $page.url.pathname === '/home guru' || $page.url.pathname === '/dashboard guru'}
     <!-- Navbar khusus untuk guru di halaman home-guru dan dashboard-guru -->
-    <Navbar />
+    <Navbarguru />
   {:else}
     <!-- Navbar umum untuk halaman lain -->
-    <Navbar />
+    <Navbarguru />
   {/if}
 {/if}
-
+<!-- Menampilkan navbar sesuai dengan kondisi URL -->
 
 <div class="container mx-auto p-6">
   <slot />
