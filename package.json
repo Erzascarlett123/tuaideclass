@@ -29,6 +29,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"firebase": "^10.13.2",
 		"sweetalert2": "^11.14.1"
 	}
 }

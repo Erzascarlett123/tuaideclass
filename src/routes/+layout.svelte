@@ -1,36 +1,66 @@
 <script lang="ts">
-  import { page } from '$app/stores'; // Mengambil informasi page dari SvelteKit
-  import Navbar from '../component/navbar.svelte'; // Navbar umum (untuk murid)
-  import Navbarguru from '../component/navbarguru.svelte'; // Navbar khusus untuk guru
-  import "../app.css"; // Pastikan path ini sesuai
-  
-  // Default untuk menampilkan navbar
-  export let showNavbar = true;
+  import Navbar from './../component/navbar.svelte';
+  import Navbarguru from '../component/navbarguru.svelte';
+  import { page } from '$app/stores'; // Untuk mengakses informasi URL saat ini
+  import { onAuthStateChanged } from 'firebase/auth'; // Untuk memantau status autentikasi
+  import { auth } from '../firebaseConfig'; // Impor konfigurasi Firebase
+  import { goto } from '$app/navigation'; // Untuk navigasi
+  import { doc, getDoc, getDocs, collection, query } from 'firebase/firestore'; // Untuk mengakses Firestore
+  import { db } from '../firebaseConfig'; // Pastikan Anda mengimpor db dari Firebase
+  import "../app.css"; // Impor CSS Anda untuk styling
 
-  // Menentukan kapan menampilkan navbar atau tidak
-  $: if ($page.url.pathname === '/login' || $page.url.pathname === '/signup') {
-    // Tidak menampilkan navbar di halaman login dan signup
-    showNavbar = false;
-  } else {
-    showNavbar = true;
+  let showNavbar = true;
+
+  // Cek apakah pengguna sudah login dan arahkan berdasarkan peran
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Pengguna sudah login, ambil peran pengguna dari Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role;
+
+        // Jika role adalah 'guru', pastikan hanya ada 3 pengguna guru
+        if (role === 'guru') {
+          const q = query(collection(db, "users"));
+          const querySnapshot = await getDocs(q);
+          const guruCount = querySnapshot.docs.filter(doc => doc.data().role === 'guru').length;
+
+          // Jika sudah ada 3 guru, arahkan ke dashboard murid
+          if (guruCount >= 3) {
+            goto('/murid/dashboard kelas'); // Ganti dengan path dashboard murid Anda
+          } else {
+            goto('/guru/dashboard guru'); // Ganti dengan path dashboard guru Anda
+          }
+        } else if (role === 'murid') {
+          goto('/murid/dashboard kelas'); // Ganti dengan path dashboard murid Anda
+        }
+      }
+    } else {
+      // Arahkan ke login jika pengguna belum login
+      goto('/login');
+    }
+  });
+
+  // Kondisi untuk menyembunyikan navbar pada path tertentu
+  $: {
+    const hideNavbarOnPaths = ['/login', '/signup'];
+    showNavbar = !hideNavbarOnPaths.includes($page.url.pathname);
   }
 </script>
 
 {#if showNavbar}
-  {#if $page.url.pathname === '/home%20guru' || $page.url.pathname === '/dashboard%20guru'}
-    <!-- Navbar khusus untuk guru di halaman home-guru dan dashboard-guru -->
+  {#if $page.url.pathname.includes('guru')}
     <Navbarguru />
   {:else}
-    <!-- Navbar umum untuk halaman lain -->
     <Navbar />
   {/if}
 {/if}
-<!-- Menampilkan navbar sesuai dengan kondisi URL -->
 
 <div class="container mx-auto p-6">
-  <slot />
+  <slot /> <!-- Slot untuk merender komponen anak -->
 </div>
 
 <style>
-  /* Tambahan styling jika diperlukan */
+  /* Styling tambahan jika diperlukan */
 </style>
