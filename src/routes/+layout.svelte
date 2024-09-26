@@ -1,45 +1,56 @@
 <script lang="ts">
+  import { onMount } from 'svelte'; 
   import Navbar from './../component/navbar.svelte';
   import Navbarguru from '../component/navbarguru.svelte';
-  import { page } from '$app/stores'; // Untuk mengakses informasi URL saat ini
-  import { onAuthStateChanged } from 'firebase/auth'; // Untuk memantau status autentikasi
-  import { auth } from '../firebaseConfig'; // Impor konfigurasi Firebase
-  import { goto } from '$app/navigation'; // Untuk navigasi
-  import { doc, getDoc, getDocs, collection, query } from 'firebase/firestore'; // Untuk mengakses Firestore
-  import { db } from '../firebaseConfig'; // Pastikan Anda mengimpor db dari Firebase
-  import "../app.css"; // Impor CSS Anda untuk styling
+  import { page } from '$app/stores'; 
+  import { onAuthStateChanged } from 'firebase/auth';
+  import { auth } from '../firebaseConfig';
+  import { goto } from '$app/navigation';
+  import { doc, getDoc, getDocs, collection, query } from 'firebase/firestore'; 
+  import { db } from '../firebaseConfig'; 
+  import "../app.css"; 
 
   let showNavbar = true;
 
-  // Cek apakah pengguna sudah login dan arahkan berdasarkan peran
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      // Pengguna sudah login, ambil peran pengguna dari Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const role = userData.role;
+  // Cek autentikasi saat komponen dipasang
+  onMount(() => {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Pengguna sudah login, ambil peran pengguna dari Firestore
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const role = userData.role;
 
-        // Jika role adalah 'guru', pastikan hanya ada 3 pengguna guru
-        if (role === 'guru') {
-          const q = query(collection(db, "users"));
-          const querySnapshot = await getDocs(q);
-          const guruCount = querySnapshot.docs.filter(doc => doc.data().role === 'guru').length;
+            // Jika role adalah 'guru', pastikan hanya ada 3 pengguna guru
+            if (role === 'guru') {
+              const q = query(collection(db, "users"));
+              const querySnapshot = await getDocs(q);
+              const guruCount = querySnapshot.docs.filter(doc => doc.data().role === 'guru').length;
 
-          // Jika sudah ada 3 guru, arahkan ke dashboard murid
-          if (guruCount >= 3) {
-            goto('/murid/dashboard kelas'); // Ganti dengan path dashboard murid Anda
+              // Jika sudah ada 3 guru, arahkan ke dashboard murid
+              if (guruCount >= 3) {
+                goto('/murid/dashboard kelas'); 
+              } else {
+                goto('/guru/dashboard guru'); 
+              }
+            } else if (role === 'murid') {
+              goto('/murid/dashboard kelas'); 
+            }
           } else {
-            goto('/guru/dashboard guru'); // Ganti dengan path dashboard guru Anda
+            console.error("User document does not exist."); // Log jika dokumen tidak ditemukan
+            goto('/login'); // Arahkan kembali ke login jika dokumen tidak ditemukan
           }
-        } else if (role === 'murid') {
-          goto('/murid/dashboard kelas'); // Ganti dengan path dashboard murid Anda
+        } catch (error) {
+          console.error("Error fetching user data:", error); // Tangkap dan log kesalahan
+          goto('/login'); // Arahkan kembali ke login jika ada kesalahan
         }
+      } else {
+        // Arahkan ke login jika pengguna belum login
+        goto('/login');
       }
-    } else {
-      // Arahkan ke login jika pengguna belum login
-      goto('/login');
-    }
+    });
   });
 
   // Kondisi untuk menyembunyikan navbar pada path tertentu

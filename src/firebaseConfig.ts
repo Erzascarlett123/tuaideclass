@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // Impor fungsi untuk autentikasi
+import { getFirestore } from "firebase/firestore"; // Impor fungsi untuk Firestore
 // Import getAnalytics hanya jika Anda akan menggunakannya di browser
 import { getAnalytics } from "firebase/analytics";
 
@@ -18,13 +18,14 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const auth = getAuth(app); // Mendapatkan instansi auth
+export const db = getFirestore(app); // Mendapatkan instansi Firestore
 
 // Inisialisasi Firebase Analytics hanya di browser
 let analytics;
 if (typeof window !== "undefined") {
-  analytics = getAnalytics(app);
+  analytics = getAnalytics(app); // Hanya menginisialisasi di sisi klien
 }
 
+// Ekspor analytics jika diperlukan
 export { analytics };

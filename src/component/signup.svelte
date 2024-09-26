@@ -11,6 +11,7 @@
   let password = '';
   let confirmPassword = '';
   let role = 'murid'; // Default role
+  const allowedGuruEmails = ['guru1@example.com', 'guru2@example.com', 'guru3@example.com']; // Ganti dengan email guru yang diizinkan
 
   const handleSignup = async () => {
       if (!username || !password || !confirmPassword) {
@@ -23,18 +24,25 @@
       }
 
       try {
-          // Create a unique email using the username
+          // Buat email unik menggunakan username
           const email = `${username}@example.com`;
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const user = userCredential.user;
 
-          // Save user data to Firestore
+          // Tentukan role berdasarkan email
+          if (allowedGuruEmails.includes(email)) {
+              role = 'guru'; // Atur role ke 'guru' jika email diizinkan
+          } else {
+              role = 'murid'; // Atur role ke 'murid' untuk semua pengguna lain
+          }
+
+          // Simpan data pengguna ke Firestore
           await setDoc(doc(db, "users", user.uid), {
               username,
               role,
           });
 
-          // Reset form after signup
+          // Reset form setelah pendaftaran
           username = '';
           password = '';
           confirmPassword = '';
@@ -52,10 +60,18 @@
           const result = await signInWithPopup(auth, provider);
           const user = result.user;
 
-          // Save user data to Firestore
+          // Tentukan role berdasarkan email
+          const email = user.email || username; // Gunakan email Google
+          if (allowedGuruEmails.includes(email)) {
+              role = 'guru'; // Atur role ke 'guru' jika email diizinkan
+          } else {
+              role = 'murid'; // Atur role ke 'murid' untuk semua pengguna lain
+          }
+
+          // Simpan data pengguna ke Firestore
           await setDoc(doc(db, "users", user.uid), {
-              username: user.displayName || username, // Use Google display name or fallback to username
-              role: 'murid', // Default role
+              username: user.displayName || username, // Gunakan nama tampilan Google atau fallback ke username
+              role,
           });
 
           alert('Pendaftaran dengan Google berhasil!');

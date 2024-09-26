@@ -1,9 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { auth } from '../firebaseConfig';
+  import { auth, db } from '../firebaseConfig';
   import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-  import { doc, getDoc } from 'firebase/firestore';
-  import { db } from '../firebaseConfig'; // Pastikan Anda mengimpor db dari Firebase
+  import { doc, getDoc, setDoc } from 'firebase/firestore';
+  import Swal from 'sweetalert2';
 
   const dispatch = createEventDispatcher();
 
@@ -12,15 +12,40 @@
 
   const handleLogin = async () => {
     if (!username || !password) {
-      alert('Username dan password harus diisi!');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Username dan password harus diisi!',
+      });
       return;
     }
-    // Logika autentikasi pengguna
-    console.log('Login:', { username, password });
+
+    try {
+      // Logika autentikasi pengguna (gunakan Firebase Authentication di sini)
+      console.log('Login:', { username, password });
+      
+      // Menampilkan SweetAlert saat login berhasil
+      await Swal.fire({
+        icon: 'success',
+        title: 'Login berhasil!',
+        text: 'Selamat datang di aplikasi!',
+        confirmButtonText: 'OK'
+      });
+      
+      // Arahkan ke halaman utama setelah menutup SweetAlert
+      window.location.href = '/'; // Ganti dengan URL tujuan yang diinginkan
+    } catch (error) {
+      console.error('Error during login:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Login Gagal',
+        text: 'Username atau password salah. Silakan coba lagi.',
+      });
+    }
+
     // Reset form setelah login
     username = '';
     password = '';
-    alert('Login berhasil!');
   };
 
   const handleGoogleLogin = async () => {
@@ -29,26 +54,47 @@
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Ambil role dari database Firebase
-      const userDoc = await getDoc(doc(db, "users", user.uid)); // Ganti "users" dengan koleksi Anda
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const role = userData.role; // Ambil role
+      // Cek apakah pengguna sudah ada di Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-        // Simpan role ke dalam local storage
-        localStorage.setItem("userRole", role);
-        
-        // Arahkan ke halaman yang sesuai berdasarkan role
-        if (role === "murid") {
-          window.location.href = "/home-murid"; // Halaman untuk murid
-        } else if (role === "guru") {
-          window.location.href = "/home-guru"; // Halaman untuk guru
-        }
+      if (userDoc.exists()) {
+        // Jika pengguna sudah ada, munculkan SweetAlert dan arahkan ke halaman utama
+        await Swal.fire({
+          icon: 'success',
+          title: 'Login berhasil!',
+          text: 'Selamat datang kembali di web kami!',
+          confirmButtonText: 'OK'
+        });
+
+        // Arahkan ke halaman utama setelah menutup SweetAlert
+        window.location.href = '/';
+      } else {
+        // Jika pengguna baru, buat dokumen baru di Firestore
+        await setDoc(userDocRef, {
+          name: user.displayName,
+          email: user.email,
+          createdAt: new Date()
+        });
+
+        // Menampilkan SweetAlert saat akun baru berhasil dibuat dan login berhasil
+        await Swal.fire({
+          icon: 'success',
+          title: 'Akun baru berhasil dibuat!',
+          text: 'Selamat datang di web kami!',
+          confirmButtonText: 'OK'
+        });
+
+        // Arahkan ke halaman utama setelah menutup SweetAlert
+        window.location.href = '/';
       }
-      
-      alert('Login dengan Google berhasil!');
     } catch (error) {
       console.error('Error saat login dengan Google:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Login Gagal',
+        text: 'Terjadi kesalahan saat login dengan Google. Silakan coba lagi.',
+      });
     }
   };
 </script>
